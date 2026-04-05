@@ -132,20 +132,20 @@ def calculate_cost_of_equity(
     return round(risk_free_rate + beta * equity_risk_premium, 4)
 
 def get_terminal_growth_rate(risk_free_rate: float) -> tuple:
-   """
-   Derive terminal growth rate from 10Y Treasury yield.
+    """
+    Derive terminal growth rate from 10Y Treasury yield.
 
-    Logic:
+    \ Logic:
         No company can grow faster than the economy forever.
         10Y Treasury yield / 2 is a conservative proxy
         for long-run nominal GDP growth.
 
-    Floored at 1.5%, capped at 3.5%.
-    Used in both DCF and DDM valuation.
+     Floored at 1.5%, capped at 3.5%.
+     Used in both DCF and DDM valuation.
 
-    Returns: (value, source)
+     Returns: (value, source)
     """
-   tgr = risk_free_rate / 2
-   tgr = max(tgr, 0.015)
-   tgr = min(tgr, 0.035)
-   return round(tgr, 4), "derived from 10Y Treasury yield / 2"
+    tgr = risk_free_rate / 2
+    tgr = max(tgr, 0.015)
+    tgr = min(tgr, 0.035)
+    return round(tgr, 4), "derived from 10Y Treasury yield / 2"

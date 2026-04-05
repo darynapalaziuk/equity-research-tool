@@ -1,7 +1,8 @@
+import time
+
 import yfinance as yf
 import pandas as pd
 from diskcache import Cache
-from statsmodels.graphics.tukeyplot import results
 
 cache = Cache("./cache")
 CACHE_TTL = 86400
@@ -20,7 +21,7 @@ class FinancialDataFetcher:
         Fetch annual income statements for a company.
         Returns: DataFrame with columns like revenue, ebitda, net_income etc.
         """
-        cache_key = f"income-statement/{ticker}"
+        cache_key = f"income_statement/{ticker}"
         if cache_key in cache:
             return cache[cache_key]
 
@@ -107,10 +108,13 @@ class FinancialDataFetcher:
         if cache_key in cache:
             return cache[cache_key]
 
-        tnx = yf.Ticker("^TNX")
-        rate = tnx.history(period="1d")["Close"].iloc[-1]/100
-        cache.set(cache_key, rate, expire=CACHE_TTL)
-        return rate
+        try:
+            tnx = yf.Ticker("^TNX")
+            rate = tnx.history(period="5d")["Close"].iloc[-1] / 100
+            cache.set(cache_key, rate, expire=CACHE_TTL)
+            return rate
+        except Exception:
+            return 0.0431
 
     def get_shares_outstanding(self, ticker: str) -> float:
         """
@@ -190,4 +194,40 @@ class FinancialDataFetcher:
             "has_dividends": annual_dividend > 0
         }
         cache.set(cache_key, result, expire=CACHE_TTL)
+        return result
+
+    def get_multiples(self, ticker: str) -> dict:
+        """
+        Fetch market multiples for a single company.
+        Used for both target and peer comparables analysis.
+        """
+        cache_key = f"multiples_{ticker}"
+        if cache_key in cache:
+            return cache[cache_key]
+
+        time.sleep(1.5)  # rate limit protection
+        stock = yf.Ticker(ticker)
+        info = stock.info
+
+        result = {
+            "ticker": ticker,
+            "name": info.get("shortName", ticker),
+            "current_price": info.get("currentPrice"),
+            "shares_outstanding": info.get("sharesOutstanding"),
+            "ebitda": info.get("ebitda"),
+            "trailing_eps": info.get("trailingEps"),
+            "revenue_per_share": info.get("revenuePerShare"),
+            "book_value_per_share": info.get("bookValue"),
+            "total_debt": info.get("totalDebt") or 0,
+            "total_cash": info.get("totalCash") or 0,
+            "EV/EBITDA": info.get("enterpriseToEbitda"),
+            "P/E": info.get("trailingPE"),
+            "P/S": info.get("priceToSalesTrailing12Months"),
+            "P/B": info.get("priceToBook")
+        }
+
+        if any([result["EV/EBITDA"], result["P/E"],
+                result["P/S"], result["P/B"]]):
+            cache.set(cache_key, result, expire=CACHE_TTL)
+
         return result
