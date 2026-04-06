@@ -7,6 +7,20 @@ from diskcache import Cache
 cache = Cache("./cache")
 CACHE_TTL = 86400
 
+COMPANY_NAMES = {
+    "AAPL": "Apple Inc.",
+    "MSFT": "Microsoft Corporation",
+    "GOOGL": "Alphabet Inc.",
+    "META": "Meta Platforms Inc.",
+    "AMZN": "Amazon.com Inc.",
+    "NVDA": "NVIDIA Corporation",
+    "TSLA": "Tesla Inc.",
+    "JPM": "JPMorgan Chase & Co.",
+    "JNJ": "Johnson & Johnson",
+    "KO": "The Coca-Cola Company",
+    "T": "AT&T Inc.",
+}
+
 
 class FinancialDataFetcher:
     def _get_ticker(self, ticker: str) -> yf.Ticker:
@@ -83,7 +97,7 @@ class FinancialDataFetcher:
         Fetch annual income statements for a company.
         Returns: DataFrame with columns like revenue, ebitda, net_income etc.
         """
-        cache_key = f"income_/{ticker}"
+        cache_key = f"income_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
 
@@ -226,19 +240,21 @@ class FinancialDataFetcher:
         return pd.Series(dtype=float)
 
     def get_dividend_data(self, ticker: str) -> dict:
-        """
-        Fetch current dividend information.
-        """
         cache_key = f"dividend_data_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
 
         info = self._get_info(ticker)
+        annual_dividend = info.get("dividendRate") or 0.0
+        payout_ratio = info.get("payoutRatio") or 0.0
+        dividend_yield_raw = info.get("dividendYield") or 0.0
+        dividend_yield = dividend_yield_raw / 100 if dividend_yield_raw > 0.2 else dividend_yield_raw
+
         result = {
-            "annual_dividend": info.get("dividendRate") or 0.0,
-            "payout_ratio": info.get("payoutRatio") or 0.0,
-            "dividend_yield": info.get("dividendYield") or 0.0,
-            "has_dividends": (info.get("dividendRate") or 0.0) > 0,
+            "annual_dividend": annual_dividend,
+            "payout_ratio": payout_ratio,
+            "dividend_yield": dividend_yield,
+            "has_dividends": annual_dividend > 0,
         }
         if result["annual_dividend"] > 0:
             cache.set(cache_key, result, expire=CACHE_TTL)
@@ -280,20 +296,17 @@ class FinancialDataFetcher:
         return result
 
     def get_company_info(self, ticker: str) -> dict:
-        """
-        Fetch basic company information.
-        Returns name, sector, country.
-        """
         cache_key = f"company_info_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
 
         info = self._get_info(ticker)
         result = {
-            "name": info.get("longName", ticker),
+            "name": info.get("longName") or COMPANY_NAMES.get(ticker, ticker),
             "sector": info.get("sector", "Unknown"),
             "country": info.get("country", "Unknown"),
             "ticker": ticker,
         }
-        cache.set(cache_key, result, expire=CACHE_TTL)
+        if info.get("longName"):
+            cache.set(cache_key, result, expire=CACHE_TTL)
         return result
