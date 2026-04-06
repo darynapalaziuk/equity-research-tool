@@ -309,3 +309,35 @@ class DCFValuation:
                 "debt_to_equity": dte_source,
             },
         }
+
+    def run_with_custom_wacc(
+            self,
+            ticker: str,
+            income_df: pd.DataFrame,
+            cash_flow_df: pd.DataFrame,
+            balance_sheet_df: pd.DataFrame,
+            beta: float,
+            risk_free_rate: float,
+            shares_outstanding: float,
+            country: str,
+            scenario: str,
+            custom_wacc: float,
+            custom_tgr: float,
+    ) -> float:
+        """
+        Run DCF with custom WACC and terminal growth rate.
+        Used for sensitivity analysis only.
+        Returns price target as float.
+        """
+        historical_fcf = self.get_historical_fcf(cash_flow_df)
+        projected_fcf, _ = self.project_fcf(historical_fcf, scenario)
+        terminal_value = self.calculate_terminal_value(
+            projected_fcf[-1], custom_wacc, custom_tgr
+        )
+        pv_results = self.calculate_present_values(
+            projected_fcf, terminal_value, custom_wacc
+        )
+        price, _ = self.enterprise_to_equity_per_share(
+            pv_results["enterprise_value"], balance_sheet_df, shares_outstanding
+        )
+        return round(float(price), 2)

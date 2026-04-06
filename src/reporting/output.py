@@ -17,6 +17,7 @@ def print_report(
     anomaly_result: dict,
     ddm_result: dict = None,
     scenario: str = "base",
+    sensitivity_df=None,
 ) -> None:
     """
     Print a complete equity research report to the terminal.
@@ -200,6 +201,28 @@ def print_report(
     console.print("[bold]DATA SOURCES[/bold]")
     for key, source in dcf_result.get("inputs", {}).items():
         console.print(f"  {key}: [dim]{source}[/dim]")
+
+    # ── Sensitivity Analysis ──
+    if sensitivity_df is not None:
+        console.print()
+        console.print("[bold]SENSITIVITY ANALYSIS — DCF Price Target[/bold]")
+        console.print("[dim]  Rows: WACC  |  Columns: Terminal Growth Rate[/dim]")
+
+        sens_table = Table(box=box.SIMPLE)
+        sens_table.add_column("WACC \\ TGR", style="cyan")
+        for col in sensitivity_df.columns:
+            sens_table.add_column(col, justify="right")
+
+        for idx, row in sensitivity_df.iterrows():
+            values = []
+            for val in row:
+                if val is None:
+                    values.append("[dim]N/A[/dim]")
+                else:
+                    values.append(f"${val:,.0f}")
+            sens_table.add_row(str(idx), *values)
+
+        console.print(sens_table)
 
     console.print()
     console.print(

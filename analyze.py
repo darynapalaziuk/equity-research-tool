@@ -7,6 +7,7 @@ from src.reporting.output import _blend_valuation, print_report
 from src.valuation.comparables import ComparablesValuation
 from src.valuation.dcf import DCFValuation
 from src.valuation.ddm import DDMValuation
+from src.valuation.sensitivity import run_sensitivity_analysis
 
 
 def main():
@@ -65,6 +66,25 @@ def main():
         scenario=scenario,
     )
 
+    # ── Sensitivity Analysis ──
+    try:
+        sensitivity_df = run_sensitivity_analysis(
+            ticker=ticker,
+            income_df=income,
+            cash_flow_df=cashflow,
+            balance_sheet_df=balance,
+            beta=beta,
+            risk_free_rate=rfr,
+            shares_outstanding=shares,
+            country=info.get("country", "United States"),
+            base_wacc=dcf_result["wacc"],
+            base_tgr=dcf_result["terminal_growth_rate"],
+            scenario=scenario,
+        )
+    except Exception as e:
+        sensitivity_df = None
+        print(f"⚠️  Could not run sensitivity analysis: {e}")
+
     comps = ComparablesValuation()
     comps_result = comps.run(ticker=ticker, peers=peers)
 
@@ -120,6 +140,7 @@ def main():
         anomaly_result=anomaly_result,
         ddm_result=ddm_result,
         scenario=scenario,
+        sensitivity_df=sensitivity_df
     )
 
 
