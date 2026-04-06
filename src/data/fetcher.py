@@ -1,5 +1,4 @@
 import time
-import random
 import yfinance as yf
 import pandas as pd
 from diskcache import Cache
@@ -83,7 +82,7 @@ class FinancialDataFetcher:
         Fetch annual income statements for a company.
         Returns: DataFrame with columns like revenue, ebitda, net_income etc.
         """
-        cache_key = f"income_statement/{ticker}"
+        cache_key = f"income_/{ticker}"
         if cache_key in cache:
             return cache[cache_key]
 
@@ -135,21 +134,23 @@ class FinancialDataFetcher:
         cache_key = f"price_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
+
+        # Try fast_info first
+        try:
+            stock = yf.Ticker(ticker)
+            price = stock.fast_info.get("lastPrice")
+            if price:
+                cache.set(cache_key, price, expire=CACHE_TTL)
+                return price
+        except Exception:
+            pass
+
         info = self._get_info(ticker)
         price = info.get("currentPrice")
         if not price:
             raise ValueError(f"Price unavailable for {ticker}")
         cache.set(cache_key, price, expire=CACHE_TTL)
         return price
-
-    def get_beta(self, ticker: str) -> float:
-        cache_key = f"beta_{ticker}"
-        if cache_key in cache:
-            return cache[cache_key]
-        info = self._get_info(ticker)
-        beta = info.get("beta", 1.0) or 1.0
-        cache.set(cache_key, beta, expire=CACHE_TTL)
-        return beta
 
     def get_risk_free_rate(self) -> float:
         """
@@ -172,6 +173,16 @@ class FinancialDataFetcher:
         cache_key = f"shares_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
+
+        try:
+            stock = yf.Ticker(ticker)
+            shares = stock.fast_info.get("shares")
+            if shares:
+                cache.set(cache_key, shares, expire=CACHE_TTL)
+                return shares
+        except Exception:
+            pass
+
         info = self._get_info(ticker)
         shares = info.get("sharesOutstanding")
         if not shares:
@@ -179,38 +190,48 @@ class FinancialDataFetcher:
         cache.set(cache_key, shares, expire=CACHE_TTL)
         return shares
 
-    def get_company_info(self, ticker: str) -> dict:
-        cache_key = f"company_info_{ticker}"
+    def get_beta(self, ticker: str) -> float:
+        """
+        Fetch beta (market sensitivity) from yfinance.
+        Falls back to 1.0 if unavailable.
+        """
+        cache_key = f"beta_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
+
         info = self._get_info(ticker)
-        result = {
-            "name": info.get("longName", ticker),
-            "sector": info.get("sector", "Unknown"),
-            "country": info.get("country", "Unknown"),
-            "ticker": ticker
-        }
-        cache.set(cache_key, result, expire=CACHE_TTL)
-        return result
+        beta = info.get("beta", 1.0) or 1.0
+        cache.set(cache_key, beta, expire=CACHE_TTL)
+        return beta
 
     def get_dividend_history(self, ticker: str) -> pd.Series:
         """
         Fetch historical dividend payments from yfinance.
-        Returns a pandas Series of dividend amounts indexed by date.
+        Returns empty Series if unavailable.
         """
         cache_key = f"dividend_history_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
 
-        stock = yf.Ticker(ticker)
-        result = stock.dividends
-        cache.set(cache_key, result, expire=CACHE_TTL)
-        return result
+        try:
+            stock = yf.Ticker(ticker)
+            result = stock.dividends
+            if result is not None:
+                cache.set(cache_key, result, expire=CACHE_TTL)
+                return result
+        except Exception:
+            pass
+
+        return pd.Series(dtype=float)
 
     def get_dividend_data(self, ticker: str) -> dict:
+        """
+        Fetch current dividend information.
+        """
         cache_key = f"dividend_data_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
+
         info = self._get_info(ticker)
         result = {
             "annual_dividend": info.get("dividendRate") or 0.0,
@@ -218,7 +239,8 @@ class FinancialDataFetcher:
             "dividend_yield": info.get("dividendYield") or 0.0,
             "has_dividends": (info.get("dividendRate") or 0.0) > 0
         }
-        cache.set(cache_key, result, expire=CACHE_TTL)
+        if result["annual_dividend"] > 0:
+            cache.set(cache_key, result, expire=CACHE_TTL)
         return result
 
     def get_multiples(self, ticker: str) -> dict:
@@ -255,4 +277,23 @@ class FinancialDataFetcher:
                 result["P/S"], result["P/B"]]):
             cache.set(cache_key, result, expire=CACHE_TTL)
 
+        return result
+
+    def get_company_info(self, ticker: str) -> dict:
+        """
+        Fetch basic company information.
+        Returns name, sector, country.
+        """
+        cache_key = f"company_info_{ticker}"
+        if cache_key in cache:
+            return cache[cache_key]
+
+        info = self._get_info(ticker)
+        result = {
+            "name": info.get("longName", ticker),
+            "sector": info.get("sector", "Unknown"),
+            "country": info.get("country", "Unknown"),
+            "ticker": ticker
+        }
+        cache.set(cache_key, result, expire=CACHE_TTL)
         return result

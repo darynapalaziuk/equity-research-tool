@@ -71,26 +71,27 @@ class DDMValuation:
             ticker: str,
             dividend_data: dict
     ) -> None:
-        """
-        Check if DDM is applicable for this company.
-        Raises ValueError with clear explanation if not.
-        Warns if payout ratio is dangerously high.
-        """
         if not dividend_data["has_dividends"]:
             raise ValueError(
                 f"DDM not applicable for {ticker}. "
                 f"Company does not pay dividends. "
-                f"Use DCF valuation instead. "
-                f"DDM only works for mature dividend-paying companies "
-                f"such as Johnson & Johnson, Coca-Cola, or LVMH."
+                f"Use DCF valuation instead."
+            )
+
+        if dividend_data["dividend_yield"] < 0.01:
+            raise ValueError(
+                f"DDM not applicable for {ticker}. "
+                f"Dividend yield of {dividend_data['dividend_yield']:.2%} "
+                f"is too low for meaningful DDM valuation. "
+                f"DDM works best for mature dividend-focused companies "
+                f"such as Johnson & Johnson or Coca-Cola."
             )
 
         if dividend_data["payout_ratio"] > 0.95:
             print(
-                f"⚠️  Warning: {ticker} has a very high payout ratio "
+                f"⚠️  Warning: {ticker} has very high payout ratio "
                 f"({dividend_data['payout_ratio']:.0%}). "
-                f"Dividend may not be sustainable. "
-                f"DDM result should be treated with caution."
+                f"Dividend may not be sustainable."
             )
 
     def project_dividends(

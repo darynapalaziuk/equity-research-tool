@@ -84,10 +84,8 @@ class ComparablesValuation:
                 print(f"⚠️  Warning: Could not fetch data for {ticker}: {e}")
 
         if not data:
-            raise ValueError(
-                "No peer data available. "
-                "Check ticker symbols and try again."
-            )
+            print("⚠️  No peer data available due to rate limiting. Comparables skipped.")
+            return pd.DataFrame(columns=["name", "EV/EBITDA", "P/E", "P/S", "P/B"])
 
         return pd.DataFrame(data).set_index("ticker")
 
@@ -277,6 +275,20 @@ class ComparablesValuation:
             )
 
         peer_multiples = self.get_peer_multiples(peers)
+
+        if peer_multiples.empty:
+            return {
+                "ticker": ticker,
+                "comps_price_target": None,
+                "target_multiples": {},
+                "current_price": None,
+                "peers": {},
+                "peer_medians": {},
+                "implied_prices": {},
+                "weight_used": {},
+                "premium_discount": {}
+            }
+
         target = self.get_target_multiples(ticker)
 
         peer_medians = self.calculate_peer_medians(peer_multiples)
