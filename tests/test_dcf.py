@@ -4,36 +4,43 @@ Tests the full valuation run with known inputs.
 """
 import pandas as pd
 import pytest
+
 from src.valuation.dcf import DCFValuation
 
 
 def make_income_df():
-    return pd.DataFrame({
-        "Total Revenue": [400e9, 375e9, 350e9],
-        "Gross Profit": [170e9, 160e9, 150e9],
-        "EBITDA": [130e9, 120e9, 110e9],
-        "EBIT": [110e9, 100e9, 90e9],
-        "Interest Expense": [-4e9, -3.5e9, -3e9],
-        "Tax Provision": [15e9, 14e9, 13e9],
-        "Pretax Income": [115e9, 105e9, 95e9],
-        "Net Income": [100e9, 90e9, 80e9],
-    })
+    return pd.DataFrame(
+        {
+            "Total Revenue": [400e9, 375e9, 350e9],
+            "Gross Profit": [170e9, 160e9, 150e9],
+            "EBITDA": [130e9, 120e9, 110e9],
+            "EBIT": [110e9, 100e9, 90e9],
+            "Interest Expense": [-4e9, -3.5e9, -3e9],
+            "Tax Provision": [15e9, 14e9, 13e9],
+            "Pretax Income": [115e9, 105e9, 95e9],
+            "Net Income": [100e9, 90e9, 80e9],
+        }
+    )
 
 
 def make_balance_df():
-    return pd.DataFrame({
-        "Total Debt": [120e9, 110e9, 100e9],
-        "Cash And Cash Equivalents": [30e9, 25e9, 20e9],
-        "Stockholders Equity": [80e9, 75e9, 70e9],
-    })
+    return pd.DataFrame(
+        {
+            "Total Debt": [120e9, 110e9, 100e9],
+            "Cash And Cash Equivalents": [30e9, 25e9, 20e9],
+            "Stockholders Equity": [80e9, 75e9, 70e9],
+        }
+    )
 
 
 def make_cashflow_df():
-    return pd.DataFrame({
-        "Operating Cash Flow": [110e9, 100e9, 90e9],
-        "Capital Expenditure": [-10e9, -9e9, -8e9],
-        "Free Cash Flow": [100e9, 91e9, 82e9],
-    })
+    return pd.DataFrame(
+        {
+            "Operating Cash Flow": [110e9, 100e9, 90e9],
+            "Capital Expenditure": [-10e9, -9e9, -8e9],
+            "Free Cash Flow": [100e9, 91e9, 82e9],
+        }
+    )
 
 
 def run_dcf(scenario="base"):
@@ -47,7 +54,7 @@ def run_dcf(scenario="base"):
         risk_free_rate=0.0431,
         shares_outstanding=15e9,
         country="United States",
-        scenario=scenario
+        scenario=scenario,
     )
 
 

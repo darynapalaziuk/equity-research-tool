@@ -3,11 +3,10 @@ Tests for shared financial calculations.
 Verifies CAPM, terminal growth rate, and ERP calculations.
 """
 import pytest
-from src.utils.calculations import (
-    calculate_cost_of_equity,
-    get_terminal_growth_rate,
-    get_equity_risk_premium,
-)
+
+from src.utils.calculations import (calculate_cost_of_equity,
+                                    get_equity_risk_premium,
+                                    get_terminal_growth_rate)
 
 
 class TestCalculateCostOfEquity:
@@ -23,17 +22,23 @@ class TestCalculateCostOfEquity:
 
     def test_high_beta(self):
         """High beta stock should have higher cost of equity."""
-        result = calculate_cost_of_equity(beta=1.5, risk_free_rate=0.04, equity_risk_premium=0.05)
+        result = calculate_cost_of_equity(
+            beta=1.5, risk_free_rate=0.04, equity_risk_premium=0.05
+        )
         assert result == pytest.approx(0.115, abs=0.001)
 
     def test_low_beta(self):
         """Low beta stock should have lower cost of equity."""
-        result = calculate_cost_of_equity(beta=0.5, risk_free_rate=0.04, equity_risk_premium=0.05)
+        result = calculate_cost_of_equity(
+            beta=0.5, risk_free_rate=0.04, equity_risk_premium=0.05
+        )
         assert result == pytest.approx(0.065, abs=0.001)
 
     def test_zero_beta(self):
         """Zero beta — cost of equity equals risk free rate."""
-        result = calculate_cost_of_equity(beta=0.0, risk_free_rate=0.04, equity_risk_premium=0.05)
+        result = calculate_cost_of_equity(
+            beta=0.0, risk_free_rate=0.04, equity_risk_premium=0.05
+        )
         assert result == pytest.approx(0.04, abs=0.001)
 
 

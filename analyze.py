@@ -140,7 +140,7 @@ def main():
         anomaly_result=anomaly_result,
         ddm_result=ddm_result,
         scenario=scenario,
-        sensitivity_df=sensitivity_df
+        sensitivity_df=sensitivity_df,
     )
 
 

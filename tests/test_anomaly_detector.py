@@ -4,6 +4,7 @@ Verifies all 5 audit-style checks work correctly.
 """
 import pandas as pd
 import pytest
+
 from src.audit.anomaly_detector import AnomalyDetector
 
 

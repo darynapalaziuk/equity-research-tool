@@ -248,7 +248,9 @@ class FinancialDataFetcher:
         annual_dividend = info.get("dividendRate") or 0.0
         payout_ratio = info.get("payoutRatio") or 0.0
         dividend_yield_raw = info.get("dividendYield") or 0.0
-        dividend_yield = dividend_yield_raw / 100 if dividend_yield_raw > 0.2 else dividend_yield_raw
+        dividend_yield = (
+            dividend_yield_raw / 100 if dividend_yield_raw > 0.2 else dividend_yield_raw
+        )
 
         result = {
             "annual_dividend": annual_dividend,

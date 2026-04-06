@@ -1,10 +1,8 @@
 import pandas as pd
 
-from src.utils.calculations import (
-    calculate_cost_of_equity,
-    get_equity_risk_premium,
-    get_terminal_growth_rate,
-)
+from src.utils.calculations import (calculate_cost_of_equity,
+                                    get_equity_risk_premium,
+                                    get_terminal_growth_rate)
 
 
 class DDMValuation:

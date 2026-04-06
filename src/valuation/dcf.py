@@ -1,10 +1,8 @@
 import pandas as pd
 
-from src.utils.calculations import (
-    calculate_cost_of_equity,
-    get_equity_risk_premium,
-    get_terminal_growth_rate,
-)
+from src.utils.calculations import (calculate_cost_of_equity,
+                                    get_equity_risk_premium,
+                                    get_terminal_growth_rate)
 
 
 class DCFValuation:
@@ -311,18 +309,18 @@ class DCFValuation:
         }
 
     def run_with_custom_wacc(
-            self,
-            ticker: str,
-            income_df: pd.DataFrame,
-            cash_flow_df: pd.DataFrame,
-            balance_sheet_df: pd.DataFrame,
-            beta: float,
-            risk_free_rate: float,
-            shares_outstanding: float,
-            country: str,
-            scenario: str,
-            custom_wacc: float,
-            custom_tgr: float,
+        self,
+        ticker: str,
+        income_df: pd.DataFrame,
+        cash_flow_df: pd.DataFrame,
+        balance_sheet_df: pd.DataFrame,
+        beta: float,
+        risk_free_rate: float,
+        shares_outstanding: float,
+        country: str,
+        scenario: str,
+        custom_wacc: float,
+        custom_tgr: float,
     ) -> float:
         """
         Run DCF with custom WACC and terminal growth rate.

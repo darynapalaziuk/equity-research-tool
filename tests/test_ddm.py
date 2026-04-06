@@ -4,6 +4,7 @@ Verifies applicability checks and math calculations.
 """
 import pandas as pd
 import pytest
+
 from src.valuation.ddm import DDMValuation
 
 
@@ -54,9 +55,7 @@ class TestProjectDividends:
         """Projected dividends should be higher than current."""
         ddm = DDMValuation()
         projected = ddm.project_dividends(
-            current_dividend=5.0,
-            growth_rate=0.06,
-            years=5
+            current_dividend=5.0, growth_rate=0.06, years=5
         )
         assert len(projected) == 5
         assert projected[0] > 5.0
@@ -66,9 +65,7 @@ class TestProjectDividends:
         """Each year should grow by growth rate."""
         ddm = DDMValuation()
         projected = ddm.project_dividends(
-            current_dividend=10.0,
-            growth_rate=0.10,
-            years=3
+            current_dividend=10.0, growth_rate=0.10, years=3
         )
         assert projected[0] == pytest.approx(11.0, abs=0.01)
         assert projected[1] == pytest.approx(12.1, abs=0.01)
@@ -78,9 +75,7 @@ class TestProjectDividends:
         """Zero growth rate should keep dividends constant."""
         ddm = DDMValuation()
         projected = ddm.project_dividends(
-            current_dividend=5.0,
-            growth_rate=0.0,
-            years=5
+            current_dividend=5.0, growth_rate=0.0, years=5
         )
         for div in projected:
             assert div == pytest.approx(5.0, abs=0.01)
@@ -93,9 +88,7 @@ class TestCalculateTerminalValue:
         """Terminal value should be positive."""
         ddm = DDMValuation()
         tv = ddm.calculate_terminal_value(
-            final_dividend=6.0,
-            cost_of_equity=0.09,
-            terminal_growth_rate=0.02
+            final_dividend=6.0, cost_of_equity=0.09, terminal_growth_rate=0.02
         )
         # TV = 6.0 * (1 + 0.02) / (0.09 - 0.02) = 6.12 / 0.07 = 87.43
         assert tv == pytest.approx(87.43, abs=0.1)
@@ -105,9 +98,7 @@ class TestCalculateTerminalValue:
         ddm = DDMValuation()
         with pytest.raises(ValueError):
             ddm.calculate_terminal_value(
-                final_dividend=6.0,
-                cost_of_equity=0.02,
-                terminal_growth_rate=0.03
+                final_dividend=6.0, cost_of_equity=0.02, terminal_growth_rate=0.03
             )
 
 
