@@ -42,7 +42,8 @@ class DDMValuation:
                 raise ValueError("Insufficient dividend history")
 
             history = dividend_history.copy()
-            history.index = history.index.tz_convert(None)
+            if history.index.tz is not None:
+                history.index = history.index.tz_convert(None)
 
             annual = dividend_history.resample("YE").sum()
             annual = annual[annual > 0]
