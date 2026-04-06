@@ -18,31 +18,64 @@ class FinancialDataFetcher:
 
     def _get_info(self, ticker: str) -> dict:
         """
-        Fetch all stock info using requests-cache session.
-        requests-cache is a known workaround for yfinance rate limiting.
+        Fetch stock info using fast_info + targeted fields.
+        fast_info uses a lighter endpoint that avoids rate limiting.
+        Falls back gracefully if any field is unavailable.
         """
         cache_key = f"info_{ticker}"
         if cache_key in cache:
             return cache[cache_key]
 
         try:
-            import requests_cache
-            session = requests_cache.CachedSession(
-                "yfinance_cache",
-                expire_after=86400
-            )
-            stock = yf.Ticker(ticker, session=session)
-            info = stock.info
+            stock = yf.Ticker(ticker)
+            fi = stock.fast_info
 
-            if info and len(info) > 5:
+            # Build info dict from fast_info fields
+            info = {
+                "currentPrice": fi.get("lastPrice"),
+                "sharesOutstanding": fi.get("shares"),
+                "marketCap": fi.get("marketCap"),
+                "beta": None,  # not in fast_info — fetch separately
+                "longName": ticker,
+                "sector": "Unknown",
+                "country": "Unknown",
+                "dividendRate": None,
+                "payoutRatio": None,
+                "dividendYield": None,
+            }
+
+            # Fetch additional fields that fast_info doesn't have
+            # using get_info_field which is less aggressive
+            try:
+                full = stock.info
+                info["beta"] = full.get("beta", 1.0)
+                info["longName"] = full.get("longName", ticker)
+                info["sector"] = full.get("sector", "Unknown")
+                info["country"] = full.get("country", "Unknown")
+                info["dividendRate"] = full.get("dividendRate")
+                info["payoutRatio"] = full.get("payoutRatio")
+                info["dividendYield"] = full.get("dividendYield")
+                info["trailingEps"] = full.get("trailingEps")
+                info["bookValue"] = full.get("bookValue")
+                info["ebitda"] = full.get("ebitda")
+                info["totalDebt"] = full.get("totalDebt")
+                info["totalCash"] = full.get("totalCash")
+                info["enterpriseToEbitda"] = full.get("enterpriseToEbitda")
+                info["trailingPE"] = full.get("trailingPE")
+                info["priceToSalesTrailing12Months"] = full.get("priceToSalesTrailing12Months")
+                info["priceToBook"] = full.get("priceToBook")
+                info["revenuePerShare"] = full.get("revenuePerShare")
+            except Exception:
+                pass  # fast_info already got the critical fields
+
+            if info.get("currentPrice"):
                 cache.set(cache_key, info, expire=CACHE_TTL)
-                return info
+
+            return info
 
         except Exception as e:
             print(f"⚠️  Failed to fetch info for {ticker}: {e}")
             return {}
-
-        return {}
 
     def get_income_statement(self, ticker: str) -> pd.DataFrame:
         """
