@@ -1,8 +1,9 @@
 import pandas as pd
+
 from src.utils.calculations import (
+    calculate_cost_of_equity,
     get_equity_risk_premium,
     get_terminal_growth_rate,
-    calculate_cost_of_equity
 )
 
 
@@ -20,10 +21,10 @@ class DCFValuation:
     """
 
     def calculate_cost_of_debt(
-            self,
-            income_df: pd.DataFrame,
-            balance_sheet_df: pd.DataFrame,
-            risk_free_rate: float
+        self,
+        income_df: pd.DataFrame,
+        balance_sheet_df: pd.DataFrame,
+        risk_free_rate: float,
     ) -> tuple:
         """
         Cost of debt = Interest Expense / Total Debt
@@ -32,9 +33,7 @@ class DCFValuation:
         Returns: (value, source)
         """
         try:
-            interest_expense = abs(
-                income_df["Interest Expense"].dropna().iloc[0]
-            )
+            interest_expense = abs(income_df["Interest Expense"].dropna().iloc[0])
             total_debt = balance_sheet_df["Total Debt"].dropna().iloc[0]
             if total_debt > 0 and interest_expense > 0:
                 cod = round(float(interest_expense / total_debt), 4)
@@ -45,10 +44,7 @@ class DCFValuation:
         fallback = round(risk_free_rate + 0.015, 4)
         return fallback, "fallback: RF + 1.5% credit spread"
 
-    def calculate_tax_rate(
-        self,
-        income_df: pd.DataFrame
-    ) -> tuple:
+    def calculate_tax_rate(self, income_df: pd.DataFrame) -> tuple:
         """
         Effective tax rate from income statement.
         First tries Tax Rate For Calcs.
@@ -57,9 +53,7 @@ class DCFValuation:
         Returns: (value, source)
         """
         try:
-            tax_rate = float(
-                income_df["Tax Rate For Calcs"].dropna().iloc[0]
-            )
+            tax_rate = float(income_df["Tax Rate For Calcs"].dropna().iloc[0])
             if 0 < tax_rate <= 1:
                 return round(tax_rate, 4), "calculated from financials"
         except (KeyError, IndexError):
@@ -69,40 +63,33 @@ class DCFValuation:
             tax = float(income_df["Tax Provision"].dropna().iloc[0])
             pretax = float(income_df["Pretax Income"].dropna().iloc[0])
             if pretax > 0:
-                return round(tax/pretax, 4), "calculated from financials"
+                return round(tax / pretax, 4), "calculated from financials"
         except (KeyError, IndexError):
             pass
 
         return 0.21, "fallback: US statutory rate 21%"
 
-    def calculate_debt_to_equity(
-        self,
-        balance_sheet_df: pd.DataFrame
-    ) -> tuple:
+    def calculate_debt_to_equity(self, balance_sheet_df: pd.DataFrame) -> tuple:
         """
         D/E ratio from balance sheet.
         Returns: (value, source)
         """
         try:
-            debt = float(
-                balance_sheet_df["Total Debt"].dropna().iloc[0]
-            )
-            equity = float(
-                balance_sheet_df["Stockholders Equity"].dropna().iloc[0]
-            )
+            debt = float(balance_sheet_df["Total Debt"].dropna().iloc[0])
+            equity = float(balance_sheet_df["Stockholders Equity"].dropna().iloc[0])
             if equity > 0:
                 return round(debt / equity, 4), "calculated from financials"
             if equity < 0:
                 print(
-                "⚠️  Warning: Negative stockholders equity detected. "
-                "Company may be technically insolvent. "
-                "D/E ratio unreliable — using 0.3 as placeholder."
-            )
+                    "⚠️  Warning: Negative stockholders equity detected. "
+                    "Company may be technically insolvent. "
+                    "D/E ratio unreliable — using 0.3 as placeholder."
+                )
         except (KeyError, IndexError):
             print(
-            "⚠️  Warning: Could not calculate D/E ratio — "
-            "Total Debt or Stockholders Equity missing from balance sheet. "
-            "Using 0.3 as placeholder. Verify data manually."
+                "⚠️  Warning: Could not calculate D/E ratio — "
+                "Total Debt or Stockholders Equity missing from balance sheet. "
+                "Using 0.3 as placeholder. Verify data manually."
             )
 
         return 0.3, "fallback: could not calculate from balance sheet"
@@ -112,24 +99,23 @@ class DCFValuation:
         cost_of_equity: float,
         cost_of_debt: float,
         tax_rate: float,
-        debt_to_equity: float
+        debt_to_equity: float,
     ) -> float:
         """
         Step 3: WACC = (E/V) x Re + (D/V) x Rd x (1 - Tc)
         Higher WACC = higher risk = lower valuation.
         """
         equity_weight = 1 / (1 + debt_to_equity)
-        debt_weight = debt_to_equity / ( 1  + debt_to_equity)
+        debt_weight = debt_to_equity / (1 + debt_to_equity)
 
-        wacc = (
-            equity_weight * cost_of_equity +
-            debt_weight * cost_of_debt * (1 - tax_rate)
+        wacc = equity_weight * cost_of_equity + debt_weight * cost_of_debt * (
+            1 - tax_rate
         )
         return round(wacc, 4)
 
     def get_historical_fcf(
-            self,
-            cash_flow_df: pd.DataFrame,
+        self,
+        cash_flow_df: pd.DataFrame,
     ) -> list:
         """
         Step 2: Extract historical free cash flows.
@@ -138,11 +124,7 @@ class DCFValuation:
         fcf = cash_flow_df["Free Cash Flow"].dropna().tolist()
         return [f for f in fcf if f > 0]
 
-    def project_fcf(
-            self,
-            historical_fcf: list,
-            scenario: str = "base"
-    ) -> tuple:
+    def project_fcf(self, historical_fcf: list, scenario: str = "base") -> tuple:
         """
         Step 1: Project FCF for next 5 years.
 
@@ -155,18 +137,14 @@ class DCFValuation:
         Returns: (projected_fcf_list, growth_rate_used)
         """
         if len(historical_fcf) >= 2:
-            cagr = (
-                historical_fcf[0] / historical_fcf[-1]
-            ) ** (1 / (len(historical_fcf) - 1)) - 1
+            cagr = (historical_fcf[0] / historical_fcf[-1]) ** (
+                1 / (len(historical_fcf) - 1)
+            ) - 1
             cagr = min(max(cagr, 0.02), 0.25)
         else:
             cagr = 0.05
 
-        scenario_multipliers = {
-            "worst": 0.6,
-            "base": 1.0,
-            "best": 1.2
-        }
+        scenario_multipliers = {"worst": 0.6, "base": 1.0, "best": 1.2}
         adjusted_cagr = cagr * scenario_multipliers.get(scenario, 1.0)
 
         growth_schedule = [
@@ -174,7 +152,7 @@ class DCFValuation:
             adjusted_cagr * 0.85,
             adjusted_cagr * 0.70,
             adjusted_cagr * 0.55,
-            adjusted_cagr * 0.40
+            adjusted_cagr * 0.40,
         ]
 
         base = historical_fcf[0]
@@ -186,10 +164,7 @@ class DCFValuation:
         return projected, round(adjusted_cagr, 4)
 
     def calculate_terminal_value(
-            self,
-            final_year_fcf: float,
-            wacc: float,
-            terminal_growth_rate: float
+        self, final_year_fcf: float, wacc: float, terminal_growth_rate: float
     ) -> float:
         """
         Step 4: Terminal Value = FCF x (1+g) / (WACC - g)
@@ -202,16 +177,11 @@ class DCFValuation:
                 f"terminal growth rate ({terminal_growth_rate:.2%})."
             )
 
-        tv = final_year_fcf * (1 + terminal_growth_rate) / (
-            wacc - terminal_growth_rate
-        )
+        tv = final_year_fcf * (1 + terminal_growth_rate) / (wacc - terminal_growth_rate)
         return round(tv, 4)
 
     def calculate_present_values(
-            self,
-            projected_fcf: list,
-            terminal_value: float,
-            wacc: float
+        self, projected_fcf: list, terminal_value: float, wacc: float
     ) -> dict:
         """
         Step 5: Discount all cash flows to present value.
@@ -222,36 +192,30 @@ class DCFValuation:
             discount_factor = 1 / (1 + wacc) ** (i + 1)
             pv_fcfs.append(round(fcf * discount_factor, 0))
 
-        pv_terminal = round(
-            terminal_value / (1 + wacc) ** len(projected_fcf), 0
-        )
+        pv_terminal = round(terminal_value / (1 + wacc) ** len(projected_fcf), 0)
 
         enterprise_value = sum(pv_fcfs) + pv_terminal
 
         return {
             "pv_fcfs": pv_fcfs,
             "pv_terminal": pv_terminal,
-            "enterprise_value": round(enterprise_value, 0)
+            "enterprise_value": round(enterprise_value, 0),
         }
 
     def enterprise_to_equity_per_share(
-            self,
-            enterprise_value: float,
-            balance_sheet_df: pd.DataFrame,
-            shares_outstanding: float
+        self,
+        enterprise_value: float,
+        balance_sheet_df: pd.DataFrame,
+        shares_outstanding: float,
     ) -> tuple:
         """
         Equity Value = Enterprise Value - Net Debt
         Price = Equity Value / Shares Outstanding
         Returns: (price, net_debt)
         """
-        total_debt = float(
-            balance_sheet_df["Total Debt"].dropna().iloc[0] or 0
-        )
+        total_debt = float(balance_sheet_df["Total Debt"].dropna().iloc[0] or 0)
         cash = float(
-            balance_sheet_df[
-                "Cash And Cash Equivalents"
-            ].dropna().iloc[0] or 0
+            balance_sheet_df["Cash And Cash Equivalents"].dropna().iloc[0] or 0
         )
         net_debt = total_debt - cash
         equity_value = enterprise_value - net_debt
@@ -267,7 +231,7 @@ class DCFValuation:
         risk_free_rate: float,
         shares_outstanding: float,
         country: str = "United States",
-        scenario: str = "base"
+        scenario: str = "base",
     ) -> dict:
         """
         Run complete DCF valuation using 6-step methodology.
@@ -294,9 +258,7 @@ class DCFValuation:
             income_df, balance_sheet_df, risk_free_rate
         )
         tax_rate, tax_source = self.calculate_tax_rate(income_df)
-        debt_to_equity, dte_source = self.calculate_debt_to_equity(
-            balance_sheet_df
-        )
+        debt_to_equity, dte_source = self.calculate_debt_to_equity(balance_sheet_df)
 
         # ── Step 3: WACC ──
         wacc = self.calculate_wacc(
@@ -307,25 +269,17 @@ class DCFValuation:
         historical_fcf = self.get_historical_fcf(cash_flow_df)
 
         # ── Step 1: Project FCF ──
-        projected_fcf, growth_rate = self.project_fcf(
-            historical_fcf, scenario
-        )
+        projected_fcf, growth_rate = self.project_fcf(historical_fcf, scenario)
 
         # ── Step 4: Terminal Value ──
-        terminal_value = self.calculate_terminal_value(
-            projected_fcf[-1], wacc, tgr
-        )
+        terminal_value = self.calculate_terminal_value(projected_fcf[-1], wacc, tgr)
 
         # ── Step 5: Present Values ──
-        pv_results = self.calculate_present_values(
-            projected_fcf, terminal_value, wacc
-        )
+        pv_results = self.calculate_present_values(projected_fcf, terminal_value, wacc)
 
         # ── Per share price ──
         price, net_debt = self.enterprise_to_equity_per_share(
-            pv_results["enterprise_value"],
-            balance_sheet_df,
-            shares_outstanding
+            pv_results["enterprise_value"], balance_sheet_df, shares_outstanding
         )
 
         return {
@@ -352,6 +306,6 @@ class DCFValuation:
                 "terminal_growth_rate": tgr_source,
                 "cost_of_debt": cod_source,
                 "tax_rate": tax_source,
-                "debt_to_equity": dte_source
-            }
+                "debt_to_equity": dte_source,
+            },
         }

@@ -1,15 +1,14 @@
 import time
-import yfinance as yf
-import pandas as pd
-from diskcache import Cache
 
+import pandas as pd
+import yfinance as yf
+from diskcache import Cache
 
 cache = Cache("./cache")
 CACHE_TTL = 86400
 
 
 class FinancialDataFetcher:
-
     def _get_ticker(self, ticker: str) -> yf.Ticker:
         """
         Get yfinance Ticker object with caching.
@@ -62,7 +61,9 @@ class FinancialDataFetcher:
                 info["totalCash"] = full.get("totalCash")
                 info["enterpriseToEbitda"] = full.get("enterpriseToEbitda")
                 info["trailingPE"] = full.get("trailingPE")
-                info["priceToSalesTrailing12Months"] = full.get("priceToSalesTrailing12Months")
+                info["priceToSalesTrailing12Months"] = full.get(
+                    "priceToSalesTrailing12Months"
+                )
                 info["priceToBook"] = full.get("priceToBook")
                 info["revenuePerShare"] = full.get("revenuePerShare")
             except Exception:
@@ -237,7 +238,7 @@ class FinancialDataFetcher:
             "annual_dividend": info.get("dividendRate") or 0.0,
             "payout_ratio": info.get("payoutRatio") or 0.0,
             "dividend_yield": info.get("dividendYield") or 0.0,
-            "has_dividends": (info.get("dividendRate") or 0.0) > 0
+            "has_dividends": (info.get("dividendRate") or 0.0) > 0,
         }
         if result["annual_dividend"] > 0:
             cache.set(cache_key, result, expire=CACHE_TTL)
@@ -270,11 +271,10 @@ class FinancialDataFetcher:
             "EV/EBITDA": info.get("enterpriseToEbitda"),
             "P/E": info.get("trailingPE"),
             "P/S": info.get("priceToSalesTrailing12Months"),
-            "P/B": info.get("priceToBook")
+            "P/B": info.get("priceToBook"),
         }
 
-        if any([result["EV/EBITDA"], result["P/E"],
-                result["P/S"], result["P/B"]]):
+        if any([result["EV/EBITDA"], result["P/E"], result["P/S"], result["P/B"]]):
             cache.set(cache_key, result, expire=CACHE_TTL)
 
         return result
@@ -293,7 +293,7 @@ class FinancialDataFetcher:
             "name": info.get("longName", ticker),
             "sector": info.get("sector", "Unknown"),
             "country": info.get("country", "Unknown"),
-            "ticker": ticker
+            "ticker": ticker,
         }
         cache.set(cache_key, result, expire=CACHE_TTL)
         return result

@@ -1,9 +1,10 @@
-import yfinance as yf
 import pandas as pd
+import yfinance as yf
 from diskcache import Cache
 
 cache = Cache("./cache")
-CACHE_TTL_YEAR = 365 * 24* 3600
+CACHE_TTL_YEAR = 365 * 24 * 3600
+
 
 def get_country_risk_premiums() -> dict:
     """
@@ -77,12 +78,11 @@ def get_base_erp(risk_free_rate: float) -> float:
             return max(min(erp, 0.12), 0.02)
     except Exception:
         pass
-    return 0.0423 # Damodaran January 2026 fallback
+    return 0.0423  # Damodaran January 2026 fallback
 
 
 def get_equity_risk_premium(
-        risk_free_rate: float,
-        country: str = "United States"
+    risk_free_rate: float, country: str = "United States"
 ) -> tuple:
     """
         Calculate total ERP for a specific country.
@@ -109,15 +109,13 @@ def get_equity_risk_premium(
     crp = crp_data[country]
     total_erp = round(base_erp + crp, 4)
     source = (
-        f"Base ERP ({base_erp:.2%}) + "
-        f"{country} CRP ({crp:.2%}) — Damodaran 2026"
+        f"Base ERP ({base_erp:.2%}) + " f"{country} CRP ({crp:.2%}) — Damodaran 2026"
     )
     return total_erp, source
 
+
 def calculate_cost_of_equity(
-        beta: float,
-        risk_free_rate: float,
-        equity_risk_premium: float
+    beta: float, risk_free_rate: float, equity_risk_premium: float
 ) -> float:
     """
         CAPM: Re = Rf + Beta x ERP
@@ -131,11 +129,12 @@ def calculate_cost_of_equity(
     """
     return round(risk_free_rate + beta * equity_risk_premium, 4)
 
+
 def get_terminal_growth_rate(risk_free_rate: float) -> tuple:
     """
     Derive terminal growth rate from 10Y Treasury yield.
 
-    \ Logic:
+    Logic:
         No company can grow faster than the economy forever.
         10Y Treasury yield / 2 is a conservative proxy
         for long-run nominal GDP growth.

@@ -1,0 +1,31 @@
+[tool.black]
+line-length = 100
+exclude = '''
+/(
+    venv
+    | migrations
+    | __pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = ["venv", "migrations"]
+
+[tool.pylint]
+disable = [
+    "C0114",
+    "C0115",
+    "C0116",
+    "W0611",
+    "R0903",
+    "R0913",
+    "R0917",
+    "W0718",
+    "R0914",
+    "R0912",
+    "R0915",
+    "R1702",
+    "R0801",  # duplicate code — deferred refactor
+]

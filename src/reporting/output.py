@@ -1,8 +1,9 @@
 from datetime import date
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
+
 from rich import box
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 console = Console()
 
@@ -15,7 +16,7 @@ def print_report(
     comps_result: dict,
     anomaly_result: dict,
     ddm_result: dict = None,
-    scenario: str = "base"
+    scenario: str = "base",
 ) -> None:
     """
     Print a complete equity research report to the terminal.
@@ -36,13 +37,15 @@ def print_report(
     )
 
     console.print()
-    console.print(Panel(
-        f"[bold cyan]EQUITY RESEARCH REPORT — "
-        f"{company_info.get('name', ticker).upper()} ({ticker})[/bold cyan]\n"
-        f"[dim]Generated: {date.today()}  |  Scenario: {scenario.upper()}[/dim]",
-        box=box.DOUBLE,
-        style="cyan"
-    ))
+    console.print(
+        Panel(
+            f"[bold cyan]EQUITY RESEARCH REPORT — "
+            f"{company_info.get('name', ticker).upper()} ({ticker})[/bold cyan]\n"
+            f"[dim]Generated: {date.today()}  |  Scenario: {scenario.upper()}[/dim]",
+            box=box.DOUBLE,
+            style="cyan",
+        )
+    )
 
     console.print()
     console.print("[bold]COMPANY[/bold]")
@@ -66,8 +69,8 @@ def print_report(
         )
     else:
         console.print(
-            f"  DDM Target:         "
-            f"[dim]N/A — company does not pay meaningful dividends[/dim]"
+            "  DDM Target:         "
+            "[dim]N/A — company does not pay meaningful dividends[/dim]"
         )
     if comps_result.get("comps_price_target"):
         console.print(
@@ -77,8 +80,8 @@ def print_report(
         )
     else:
         console.print(
-            f"  Comparables Target: "
-            f"[dim]N/A — peer data unavailable (rate limited)[/dim]"
+            "  Comparables Target: "
+            "[dim]N/A — peer data unavailable (rate limited)[/dim]"
         )
     console.print(f"  {'─' * 45}")
     console.print(f"  Blended Target:     [bold]${blended:,.2f}[/bold]")
@@ -90,11 +93,9 @@ def print_report(
     )
     console.print(f"  {'─' * 45}")
 
-    rec_color = {
-        "BUY": "green",
-        "HOLD": "yellow",
-        "SELL": "red"
-    }.get(recommendation, "white")
+    rec_color = {"BUY": "green", "HOLD": "yellow", "SELL": "red"}.get(
+        recommendation, "white"
+    )
 
     console.print(
         f"  Recommendation:     "
@@ -125,15 +126,16 @@ def print_report(
             console.print(f"  Projected Y{i+1}:    ${fcf/1e9:.1f}B")
 
     console.print(
-        f"  Terminal Value:   "
-        f"${dcf_result.get('terminal_value', 0)/1e12:.2f}T"
+        f"  Terminal Value:   " f"${dcf_result.get('terminal_value', 0)/1e12:.2f}T"
     )
 
     console.print()
     console.print("[bold]PEER COMPARABLES[/bold]")
 
     if not comps_result.get("peers"):
-        console.print("  [dim]Peer data unavailable — rate limited. Run again to retry.[/dim]")
+        console.print(
+            "  [dim]Peer data unavailable — rate limited. Run again to retry.[/dim]"
+        )
     else:
         table = Table(box=box.SIMPLE)
         table.add_column("Ticker", style="cyan")
@@ -150,7 +152,7 @@ def print_report(
                 f"{peer_data.get('EV/EBITDA', 'N/A')}",
                 f"{peer_data.get('P/E', 'N/A')}",
                 f"{peer_data.get('P/S', 'N/A')}",
-                f"{peer_data.get('P/B', 'N/A')}"
+                f"{peer_data.get('P/B', 'N/A')}",
             )
 
         medians = comps_result.get("peer_medians", {})
@@ -160,7 +162,7 @@ def print_report(
             f"[bold]{medians.get('EV/EBITDA', 'N/A')}[/bold]",
             f"[bold]{medians.get('P/E', 'N/A')}[/bold]",
             f"[bold]{medians.get('P/S', 'N/A')}[/bold]",
-            f"[bold]{medians.get('P/B', 'N/A')}[/bold]"
+            f"[bold]{medians.get('P/B', 'N/A')}[/bold]",
         )
 
         target_multiples = comps_result.get("target_multiples", {})
@@ -170,7 +172,7 @@ def print_report(
             f"{target_multiples.get('EV/EBITDA', 'N/A')}",
             f"{target_multiples.get('P/E', 'N/A')}",
             f"{target_multiples.get('P/S', 'N/A')}",
-            f"{target_multiples.get('P/B', 'N/A')}"
+            f"{target_multiples.get('P/B', 'N/A')}",
         )
 
         console.print(table)
@@ -190,8 +192,7 @@ def print_report(
                 flag["severity"], "white"
             )
             console.print(
-                f"  [{color}][{flag['severity']}] "
-                f"{flag['type']}[/{color}]"
+                f"  [{color}][{flag['severity']}] " f"{flag['type']}[/{color}]"
             )
             console.print(f"    {flag['description']}")
 
@@ -201,20 +202,19 @@ def print_report(
         console.print(f"  {key}: [dim]{source}[/dim]")
 
     console.print()
-    console.print(Panel(
-        "[dim]This report is generated automatically from public financial data. "
-        "Not financial advice. Always verify with primary sources.[/dim]",
-        box=box.SIMPLE,
-        style="dim"
-    ))
+    console.print(
+        Panel(
+            "[dim]This report is generated automatically from public financial data. "
+            "Not financial advice. Always verify with primary sources.[/dim]",
+            box=box.SIMPLE,
+            style="dim",
+        )
+    )
     console.print()
 
 
 def _blend_valuation(
-    current_price: float,
-    dcf_result: dict,
-    comps_result: dict,
-    ddm_result: dict = None
+    current_price: float, dcf_result: dict, comps_result: dict, ddm_result: dict = None
 ) -> tuple:
     dcf_price = dcf_result["dcf_price_target"]
     comps_price = comps_result.get("comps_price_target")

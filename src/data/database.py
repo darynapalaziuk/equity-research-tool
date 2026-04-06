@@ -1,5 +1,7 @@
 from datetime import date
+
 from sqlalchemy import create_engine, text
+
 from src.utils.config import DB_URL
 
 
@@ -16,30 +18,29 @@ def save_valuation_result(
     ddm_value: float,
     comparables_value: float,
     blended_value: float,
-    recommendation: str
+    recommendation: str,
 ) -> None:
     engine = get_engine()
 
     with engine.connect() as conn:
         result = conn.execute(
-            text("""
+            text(
+                """
                 INSERT INTO companies (ticker, name, sector, created_at)
                 VALUES (:ticker, :name, :sector, NOW())
                 ON CONFLICT (ticker) DO UPDATE
                 SET name = EXCLUDED.name,
                     sector = EXCLUDED.sector
                 RETURNING id
-            """),
-            {
-                "ticker": ticker,
-                "name": company_name,
-                "sector": sector
-            }
+            """
+            ),
+            {"ticker": ticker, "name": company_name, "sector": sector},
         )
         company_id = result.fetchone()[0]
 
         conn.execute(
-            text("""
+            text(
+                """
                 INSERT INTO valuation_results (
                     company_id, date, dcf_value, ddm_value,
                     comparables_value, blended_value,
@@ -50,16 +51,21 @@ def save_valuation_result(
                     :comparables_value, :blended_value,
                     :recommendation, NOW()
                 )
-            """),
+            """
+            ),
             {
                 "company_id": company_id,
                 "date": date.today(),
                 "dcf_value": float(dcf_value) if dcf_value is not None else None,
                 "ddm_value": float(ddm_value) if ddm_value is not None else None,
-                "comparables_value": float(comparables_value) if comparables_value is not None else None,
-                "blended_value": float(blended_value) if blended_value is not None else None,
-                "recommendation": recommendation
-            }
+                "comparables_value": float(comparables_value)
+                if comparables_value is not None
+                else None,
+                "blended_value": float(blended_value)
+                if blended_value is not None
+                else None,
+                "recommendation": recommendation,
+            },
         )
 
         conn.commit()
@@ -76,7 +82,8 @@ def get_valuation_history(ticker: str) -> list:
 
     with engine.connect() as conn:
         result = conn.execute(
-            text("""
+            text(
+                """
                 SELECT
                     vr.date,
                     vr.dcf_value,
@@ -90,8 +97,9 @@ def get_valuation_history(ticker: str) -> list:
                 WHERE c.ticker = :ticker
                 ORDER BY vr.date DESC
                 LIMIT 10
-            """),
-            {"ticker": ticker}
+            """
+            ),
+            {"ticker": ticker},
         )
 
         rows = result.fetchall()
@@ -103,7 +111,7 @@ def get_valuation_history(ticker: str) -> list:
                 "comparables_value": row[3],
                 "blended_value": row[4],
                 "recommendation": row[5],
-                "created_at": str(row[6])
+                "created_at": str(row[6]),
             }
             for row in rows
         ]

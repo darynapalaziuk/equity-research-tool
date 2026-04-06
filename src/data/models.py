@@ -1,11 +1,13 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime
-from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
+
+from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+
 class Company(Base):
-    __tablename__ = 'companies'
+    __tablename__ = "companies"
 
     id = Column(Integer, primary_key=True)
     ticker = Column(String, unique=True, nullable=False)
@@ -21,10 +23,10 @@ class Company(Base):
 
 
 class IncomeStatement(Base):
-    __tablename__ = 'income_statements'
+    __tablename__ = "income_statements"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     date = Column(Date, nullable=False)
     revenue = Column(Float)
     gross_profit = Column(Float)
@@ -37,10 +39,10 @@ class IncomeStatement(Base):
 
 
 class BalanceSheet(Base):
-    __tablename__ = 'balance_sheets'
+    __tablename__ = "balance_sheets"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     date = Column(Date, nullable=False)
     total_assets = Column(Float)
     total_debt = Column(Float)
@@ -53,10 +55,10 @@ class BalanceSheet(Base):
 
 
 class CashFlow(Base):
-    __tablename__ = 'cash_flows'
+    __tablename__ = "cash_flows"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     date = Column(Date, nullable=False)
     operating_cash_flow = Column(Float)
     capex = Column(Float)
@@ -67,10 +69,10 @@ class CashFlow(Base):
 
 
 class ValuationResult(Base):
-    __tablename__ = 'valuation_results'
+    __tablename__ = "valuation_results"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     date = Column(Date, nullable=False)
     dcf_value = Column(Float)
     ddm_value = Column(Float)
@@ -83,10 +85,10 @@ class ValuationResult(Base):
 
 
 class AnomalyFlag(Base):
-    __tablename__ = 'anomaly_flags'
+    __tablename__ = "anomaly_flags"
 
     id = Column(Integer, primary_key=True)
-    company_id = Column(Integer, ForeignKey('companies.id'), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     detected_at = Column(Date, nullable=False)
     flag_type = Column(String)
     severity = Column(String)

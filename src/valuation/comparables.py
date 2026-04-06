@@ -2,8 +2,8 @@ import time
 
 import pandas as pd
 import yfinance as yf
-
 from diskcache import Cache
+
 cache = Cache("./cache")
 CACHE_TTL = 86400
 
@@ -73,7 +73,7 @@ class ComparablesValuation:
                         "EV/EBITDA": ev_ebitda,
                         "P/E": pe,
                         "P/S": ps,
-                        "P/B": pb
+                        "P/B": pb,
                     }
                     cache.set(cache_key, row, expire=CACHE_TTL)
                     data.append(row)
@@ -84,7 +84,9 @@ class ComparablesValuation:
                 print(f"⚠️  Warning: Could not fetch data for {ticker}: {e}")
 
         if not data:
-            print("⚠️  No peer data available due to rate limiting. Comparables skipped.")
+            print(
+                "⚠️  No peer data available due to rate limiting. Comparables skipped."
+            )
             return pd.DataFrame(columns=["name", "EV/EBITDA", "P/E", "P/S", "P/B"])
 
         return pd.DataFrame(data).set_index("ticker")
@@ -116,18 +118,17 @@ class ComparablesValuation:
             "EV/EBITDA": info.get("enterpriseToEbitda"),
             "P/E": info.get("trailingPE"),
             "P/S": info.get("priceToSalesTrailing12Months"),
-            "P/B": info.get("priceToBook")
+            "P/B": info.get("priceToBook"),
         }
 
-        if any([result["EV/EBITDA"], result["P/E"],
-                result["P/S"], result["P/B"]]):
+        if any([result["EV/EBITDA"], result["P/E"], result["P/S"], result["P/B"]]):
             cache.set(cache_key, result, expire=CACHE_TTL)
 
         return result
 
     def calculate_peer_medians(
-            self,
-            peer_multiples: pd.DataFrame,
+        self,
+        peer_multiples: pd.DataFrame,
     ) -> dict:
         """
         Calculate median multiples across peers.
@@ -146,11 +147,7 @@ class ComparablesValuation:
                 medians[col] = None
         return medians
 
-    def calculate_implied_prices(
-            self,
-            target: dict,
-            peer_medians: dict
-    ) -> dict:
+    def calculate_implied_prices(self, target: dict, peer_medians: dict) -> dict:
         """
         Calculate implied share price for each multiple.
 
@@ -166,9 +163,7 @@ class ComparablesValuation:
 
         if peer_medians.get("P/E") and target.get("trailing_eps"):
             try:
-                implied["P/E"] = round(
-                    peer_medians["P/E"] * target["trailing_eps"], 2
-                )
+                implied["P/E"] = round(peer_medians["P/E"] * target["trailing_eps"], 2)
             except (TypeError, ZeroDivisionError):
                 implied["P/E"] = None
 
@@ -203,10 +198,7 @@ class ComparablesValuation:
 
         return implied
 
-    def calculate_blended_price(
-            self,
-            implied_prices: dict
-    ) -> tuple:
+    def calculate_blended_price(self, implied_prices: dict) -> tuple:
         """
         Calculate blended price from all available multiples.
 
@@ -225,32 +217,19 @@ class ComparablesValuation:
             "P/B": 0.10,
         }
 
-        available = {
-            k: v for k, v in implied_prices.items()
-            if v is not None and v > 0
-        }
+        available = {k: v for k, v in implied_prices.items() if v is not None and v > 0}
 
         if not available:
             raise ValueError("No valid implied prices to blend.")
 
         total_weight = sum(weight[k] for k in available)
-        blended = sum(
-            available[k] * weight[k] / total_weight
-            for k in available
-        )
+        blended = sum(available[k] * weight[k] / total_weight for k in available)
 
-        weight_used = {
-            k: round(weight[k] / total_weight, 2)
-            for k in available
-        }
+        weight_used = {k: round(weight[k] / total_weight, 2) for k in available}
 
         return round(blended, 2), weight_used
 
-    def run(
-        self,
-        ticker: str,
-        peers: list
-    ) -> dict:
+    def run(self, ticker: str, peers: list) -> dict:
         """
         Run complete comparables valuation.
 
@@ -286,7 +265,7 @@ class ComparablesValuation:
                 "peer_medians": {},
                 "implied_prices": {},
                 "weight_used": {},
-                "premium_discount": {}
+                "premium_discount": {},
             }
 
         target = self.get_target_multiples(ticker)
@@ -295,32 +274,25 @@ class ComparablesValuation:
 
         implied_prices = self.calculate_implied_prices(target, peer_medians)
 
-        blended_price, weight_used = self.calculate_blended_price(
-            implied_prices
-        )
+        blended_price, weight_used = self.calculate_blended_price(implied_prices)
 
         return {
             "ticker": ticker,
             "comps_price_target": blended_price,
-
             "target_multiples": {
-                k: target.get(k)
-                for k in ["EV/EBITDA", "P/E", "P/S", "P/B"]
+                k: target.get(k) for k in ["EV/EBITDA", "P/E", "P/S", "P/B"]
             },
             "current_price": target.get("current_price"),
-
             "peers": peer_multiples.to_dict(orient="index"),
             "peer_medians": peer_medians,
-
             "implied_prices": implied_prices,
             "weight_used": weight_used,
-
             "premium_discount": {
                 multiple: round(
-                    (target.get(multiple) or 0) /
-                    (peer_medians.get(multiple) or 1) - 1, 4
+                    (target.get(multiple) or 0) / (peer_medians.get(multiple) or 1) - 1,
+                    4,
                 )
                 for multiple in ["EV/EBITDA", "P/E", "P/S", "P/B"]
                 if peer_medians.get(multiple)
-            }
+            },
         }

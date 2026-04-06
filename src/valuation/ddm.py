@@ -1,9 +1,9 @@
 import pandas as pd
 
 from src.utils.calculations import (
+    calculate_cost_of_equity,
     get_equity_risk_premium,
     get_terminal_growth_rate,
-    calculate_cost_of_equity
 )
 
 
@@ -25,9 +25,7 @@ class DDMValuation:
     """
 
     def _calculate_dividend_growth_rate(
-            self,
-            dividend_history:pd.Series,
-            years: int = 5
+        self, dividend_history: pd.Series, years: int = 5
     ) -> tuple:
         """
         Calculate historical dividend growth rate (CAGR).
@@ -46,31 +44,24 @@ class DDMValuation:
             history = dividend_history.copy()
             history.index = history.index.tz_convert(None)
 
-            annual = dividend_history.resample('YE').sum()
+            annual = dividend_history.resample("YE").sum()
             annual = annual[annual > 0]
 
             if len(annual) >= 2:
                 first = float(annual.iloc[-min(years, len(annual))])
                 last = float(annual.iloc[-1])
-                n = min(years, len(annual)) -1
+                n = min(years, len(annual)) - 1
 
                 if first > 0 and n > 0:
-                    cagr = (last / first) ** (1 / n) -1
+                    cagr = (last / first) ** (1 / n) - 1
                     cagr = max(min(cagr, 0.20), 0.0)
-                    return (
-                        round(cagr, 4),
-                        f"historical dividend CAGR ({n} years)"
-                    )
+                    return (round(cagr, 4), f"historical dividend CAGR ({n} years)")
         except Exception:
             pass
 
         return 0.05, "fallback: 5% default dividend growth rate"
 
-    def check_ddm_applicability(
-            self,
-            ticker: str,
-            dividend_data: dict
-    ) -> None:
+    def check_ddm_applicability(self, ticker: str, dividend_data: dict) -> None:
         if not dividend_data["has_dividends"]:
             raise ValueError(
                 f"DDM not applicable for {ticker}. "
@@ -95,10 +86,7 @@ class DDMValuation:
             )
 
     def project_dividends(
-            self,
-            current_dividend: float,
-            growth_rate: float,
-            years: int = 5
+        self, current_dividend: float, growth_rate: float, years: int = 5
     ) -> list:
         """
         Stage 1: Project dividends for next 5 years.
@@ -115,10 +103,7 @@ class DDMValuation:
         return dividends
 
     def calculate_terminal_value(
-            self,
-            final_dividend: float,
-            cost_of_equity: float,
-            terminal_growth_rate: float
+        self, final_dividend: float, cost_of_equity: float, terminal_growth_rate: float
     ) -> float:
         """
         Stage 2: Gordon Growth Model terminal value.
@@ -139,16 +124,15 @@ class DDMValuation:
                 f"Check your inputs."
             )
 
-        tv = final_dividend * (1 + terminal_growth_rate) / (
-            cost_of_equity -terminal_growth_rate
+        tv = (
+            final_dividend
+            * (1 + terminal_growth_rate)
+            / (cost_of_equity - terminal_growth_rate)
         )
         return round(tv, 4)
 
     def calculate_present_values(
-            self,
-            projected_dividends: list,
-            terminal_value: float,
-            cost_of_equity: float
+        self, projected_dividends: list, terminal_value: float, cost_of_equity: float
     ) -> dict:
         """
         Discount all dividends and terminal value to present value.
@@ -164,8 +148,7 @@ class DDMValuation:
             pv_dividends.append(round(div * discounted_factor, 4))
 
         pv_terminal = round(
-            terminal_value / (1+ cost_of_equity) ** len(projected_dividends),
-            4
+            terminal_value / (1 + cost_of_equity) ** len(projected_dividends), 4
         )
 
         equity_value = sum(pv_dividends) + pv_terminal
@@ -186,18 +169,18 @@ class DDMValuation:
         country: str = "United States",
     ) -> dict:
         """
-                Run complete DDM valuation.
+        Run complete DDM valuation.
 
-                Args:
-                    ticker: stock symbol e.g. 'JNJ'
-                    dividend_data: from fetcher.get_dividend_data()
-                    dividend_history: from fetcher.get_dividend_history()
-                    beta: from fetcher.get_beta()
-                    risk_free_rate: from fetcher.get_risk_free_rate()
-                    country: from fetcher.get_company_info()['country']
+        Args:
+            ticker: stock symbol e.g. 'JNJ'
+            dividend_data: from fetcher.get_dividend_data()
+            dividend_history: from fetcher.get_dividend_history()
+            beta: from fetcher.get_beta()
+            risk_free_rate: from fetcher.get_risk_free_rate()
+            country: from fetcher.get_company_info()['country']
 
-                Raises ValueError if company does not pay dividends.
-                """
+        Raises ValueError if company does not pay dividends.
+        """
 
         self.check_ddm_applicability(ticker, dividend_data)
 
@@ -210,43 +193,34 @@ class DDMValuation:
         )
 
         projected_dividends = self.project_dividends(
-            dividend_data["annual_dividend"],
-            div_growth
+            dividend_data["annual_dividend"], div_growth
         )
 
         terminal_value = self.calculate_terminal_value(
-            projected_dividends[-1],
-            cost_of_equity,
-            tgr
+            projected_dividends[-1], cost_of_equity, tgr
         )
 
         pv_results = self.calculate_present_values(
-            projected_dividends,
-            terminal_value,
-            cost_of_equity
+            projected_dividends, terminal_value, cost_of_equity
         )
 
         return {
             "ticker": ticker,
             "ddm_price_target": pv_results["equity_value"],
-
             "current_annual_dividend": dividend_data["annual_dividend"],
             "dividend_yield": dividend_data["dividend_yield"],
             "payout_ratio": dividend_data["payout_ratio"],
             "dividend_growth_rate": div_growth,
             "projected_dividends": projected_dividends,
-
             "cost_of_equity": cost_of_equity,
             "equity_risk_premium": erp,
             "terminal_growth_rate": tgr,
             "terminal_value": terminal_value,
-
             "pv_dividends": pv_results["pv_dividends"],
             "pv_terminal": pv_results["pv_terminal"],
-
             "inputs": {
                 "equity_risk_premium": erp_source,
                 "terminal_growth_rate": tgr_source,
-                "dividend_growth_rate": div_growth_source
-            }
+                "dividend_growth_rate": div_growth_source,
+            },
         }
