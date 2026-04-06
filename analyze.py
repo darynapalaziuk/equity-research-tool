@@ -4,7 +4,8 @@ from src.valuation.dcf import DCFValuation
 from src.valuation.ddm import DDMValuation
 from src.valuation.comparables import ComparablesValuation
 from src.audit.anomaly_detector import AnomalyDetector
-from src.reporting.output import print_report
+from src.reporting.output import print_report, _blend_valuation
+from src.data.database import save_valuation_result
 
 
 def main():
@@ -95,6 +96,30 @@ def main():
         cash_flow_df=cashflow
     )
 
+    # ── Blend valuation ──
+    blended_price, weights, upside, recommendation = _blend_valuation(
+        current_price=price,
+        dcf_result=dcf_result,
+        comps_result=comps_result,
+        ddm_result=ddm_result
+    )
+
+    # ── Save to database ──
+    try:
+        save_valuation_result(
+            ticker=ticker,
+            company_name=info.get("name", ticker),
+            sector=info.get("sector", "Unknown"),
+            dcf_value=dcf_result["dcf_price_target"],
+            ddm_value=ddm_result["ddm_price_target"] if ddm_result else None,
+            comparables_value=comps_result.get("comps_price_target"),
+            blended_value=blended_price,
+            recommendation=recommendation
+        )
+    except Exception as e:
+        print(f"⚠️  Could not save to database: {e}")
+
+    # ── Print report ──
     print_report(
         ticker=ticker,
         company_info=info,
