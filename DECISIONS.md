@@ -95,3 +95,25 @@
 **Decision:** Python 3.11 — most stable version for the scientific Python ecosystem at time of development.
 
 **Consequences:** All dependencies install without compilation issues. Project must be updated when upgrading Python version.
+
+---
+
+## ADR-009: CAGR Over ARIMA for FCF Projection
+
+**Status:** Accepted
+
+**Context:** ARIMA was considered for FCF projection as a more 
+sophisticated alternative to historical CAGR.
+
+**Decision:** CAGR retained. yfinance provides only 5 annual FCF 
+observations — insufficient for reliable ARIMA parameter estimation 
+(minimum 20-30 required). With 5 points ARIMA reduces to a linear 
+trend, offering no advantage over CAGR while adding model complexity 
+and fragility.
+
+**Consequences:** FCF projections use historical CAGR with scenario 
+multipliers (worst 60%, base 100%, best 120%). This is conservative 
+and transparent. For production use with longer data series (10+ years 
+from a paid provider), ARIMA(p,1,q) would be appropriate.
+
+---
