@@ -117,3 +117,12 @@ and transparent. For production use with longer data series (10+ years
 from a paid provider), ARIMA(p,1,q) would be appropriate.
 
 ---
+
+## ADR-010: Total Shareholder Yield DDM for Buyback-Heavy Companies
+
+**Status:** Accepted
+
+**Context:** Standard DDM excludes companies with dividend yield below 1% — including Apple (0.41% yield). However Apple returns ~$90B annually to shareholders via buybacks, making standard DDM incomplete.
+
+**Decision:** TSY DDM implemented as automatic fallback when dividend yield < 1% but significant buybacks exist:
+**Consequences:** Companies like Apple, Microsoft, and Meta that prioritize buybacks over dividends now receive a meaningful DDM valuation. Standard DDM remains primary for traditional dividend payers (JNJ, KO). Report clearly labels which method was used.
