@@ -67,30 +67,39 @@ class DCFValuation:
 
         return 0.21, "fallback: US statutory rate 21%"
 
-    def calculate_debt_to_equity(self, balance_sheet_df: pd.DataFrame) -> tuple:
+    def calculate_debt_to_equity(
+            self,
+            balance_sheet_df: pd.DataFrame,
+            shares_outstanding: float = None,
+            current_price: float = None,
+    ) -> tuple:
         """
-        D/E ratio from balance sheet.
-        Returns: (value, source)
+        D/E ratio for WACC calculation.
+
+        Uses Market D/E (Total Debt / Market Cap) when possible.
+        Market D/E is theoretically correct for WACC per Damodaran.
+        Falls back to Book D/E if market data unavailable.
+        Falls back to industry average 0.3 if both unavailable.
         """
         try:
             debt = float(balance_sheet_df["Total Debt"].dropna().iloc[0])
+
+            # Prefer market D/E
+            if shares_outstanding and current_price:
+                market_cap = shares_outstanding * current_price
+                if market_cap > 0:
+                    market_de = round(debt / market_cap, 4)
+                    return market_de, "calculated from market cap (Market D/E)"
+
+            # Fall back to book D/E
             equity = float(balance_sheet_df["Stockholders Equity"].dropna().iloc[0])
             if equity > 0:
-                return round(debt / equity, 4), "calculated from financials"
-            if equity < 0:
-                print(
-                    "⚠️  Warning: Negative stockholders equity detected. "
-                    "Company may be technically insolvent. "
-                    "D/E ratio unreliable — using 0.3 as placeholder."
-                )
-        except (KeyError, IndexError):
-            print(
-                "⚠️  Warning: Could not calculate D/E ratio — "
-                "Total Debt or Stockholders Equity missing from balance sheet. "
-                "Using 0.3 as placeholder. Verify data manually."
-            )
+                return round(debt / equity, 4), "calculated from financials (Book D/E)"
 
-        return 0.3, "fallback: could not calculate from balance sheet"
+        except (KeyError, IndexError):
+            pass
+
+        return 0.3, "fallback: industry average D/E"
 
     def calculate_wacc(
         self,
@@ -228,6 +237,7 @@ class DCFValuation:
         beta: float,
         risk_free_rate: float,
         shares_outstanding: float,
+        current_price: float,
         country: str = "United States",
         scenario: str = "base",
     ) -> dict:
@@ -244,6 +254,7 @@ class DCFValuation:
             shares_outstanding: from fetcher.get_shares_outstanding()
             country: from fetcher.get_company_info()['country']
             scenario: 'worst', 'base', or 'best'
+            current_price: from fetcher.get_current_price()
         """
 
         # ── Shared calculations from calculations.py ──
@@ -256,7 +267,11 @@ class DCFValuation:
             income_df, balance_sheet_df, risk_free_rate
         )
         tax_rate, tax_source = self.calculate_tax_rate(income_df)
-        debt_to_equity, dte_source = self.calculate_debt_to_equity(balance_sheet_df)
+        debt_to_equity, dte_source = self.calculate_debt_to_equity(
+            balance_sheet_df,
+            shares_outstanding=shares_outstanding,
+            current_price=current_price,
+        )
 
         # ── Step 3: WACC ──
         wacc = self.calculate_wacc(

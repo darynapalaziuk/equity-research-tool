@@ -62,6 +62,7 @@ def main():
         beta=beta,
         risk_free_rate=rfr,
         shares_outstanding=shares,
+        current_price=price,
         country=info.get("country", "United States"),
         scenario=scenario,
     )

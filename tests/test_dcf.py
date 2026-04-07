@@ -53,6 +53,7 @@ def run_dcf(scenario="base"):
         beta=1.1,
         risk_free_rate=0.0431,
         shares_outstanding=15e9,
+        current_price=50.0,
         country="United States",
         scenario=scenario,
     )
