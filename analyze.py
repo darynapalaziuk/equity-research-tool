@@ -67,6 +67,32 @@ def main():
         scenario=scenario,
     )
 
+    dcf_worst = dcf.run(
+        ticker=ticker,
+        income_df=income,
+        cash_flow_df=cashflow,
+        balance_sheet_df=balance,
+        beta=beta,
+        risk_free_rate=rfr,
+        shares_outstanding=shares,
+        current_price=price,
+        country=info.get("country", "United States"),
+        scenario="worst",
+    )
+
+    dcf_best = dcf.run(
+        ticker=ticker,
+        income_df=income,
+        cash_flow_df=cashflow,
+        balance_sheet_df=balance,
+        beta=beta,
+        risk_free_rate=rfr,
+        shares_outstanding=shares,
+        current_price=price,
+        country=info.get("country", "United States"),
+        scenario="best",
+    )
+
     # ── Sensitivity Analysis ──
     try:
         sensitivity_df = run_sensitivity_analysis(
@@ -141,6 +167,8 @@ def main():
         company_info=info,
         current_price=price,
         dcf_result=dcf_result,
+        dcf_worst=dcf_worst,
+        dcf_best=dcf_best,
         comps_result=comps_result,
         anomaly_result=anomaly_result,
         ddm_result=ddm_result,

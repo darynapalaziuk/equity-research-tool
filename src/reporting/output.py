@@ -19,6 +19,8 @@ def print_report(
     ddm_skip_reason: str = None,
     scenario: str = "base",
     sensitivity_df=None,
+    dcf_worst: dict = None,
+    dcf_best: dict = None
 ) -> None:
     """
     Print a complete equity research report to the terminal.
@@ -123,6 +125,23 @@ def print_report(
     console.print(f"  [bold]WACC:             {dcf_result['wacc']:.2%}[/bold]")
     console.print(f"  ERP:              {dcf_result['equity_risk_premium']:.2%}")
     console.print(f"  Terminal Growth:  {dcf_result['terminal_growth_rate']:.2%}")
+
+    # ── Scenario Analysis ──
+    if dcf_worst and dcf_best:
+        console.print()
+        console.print("[bold]DCF SCENARIO ANALYSIS[/bold]")
+        console.print(
+            f"  [red]Worst Case:  ${dcf_worst['dcf_price_target']:,.2f}[/red]"
+            f"  [dim](60% of base growth)[/dim]"
+        )
+        console.print(
+            f"  Base Case:   ${dcf_result['dcf_price_target']:,.2f}"
+            f"  [dim](historical CAGR)[/dim]"
+        )
+        console.print(
+            f"  [green]Best Case:   ${dcf_best['dcf_price_target']:,.2f}[/green]"
+            f"  [dim](120% of base growth)[/dim]"
+        )
 
     console.print()
     console.print("[bold]CASH FLOW PROJECTION[/bold]")
