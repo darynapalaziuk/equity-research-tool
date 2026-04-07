@@ -63,16 +63,14 @@ class DDMValuation:
     def check_ddm_applicability(self, ticker: str, dividend_data: dict) -> None:
         if not dividend_data["has_dividends"]:
             raise ValueError(
-                f"DDM not applicable for {ticker}. "
-                f"Company does not pay dividends. "
+                f"NO_DIVIDENDS: {ticker} does not pay dividends. "
                 f"Use DCF valuation instead."
             )
 
         if dividend_data["dividend_yield"] < 0.01:
             raise ValueError(
-                f"DDM not applicable for {ticker}. "
-                f"Dividend yield of {dividend_data['dividend_yield']:.2%} "
-                f"is too low for meaningful DDM valuation. "
+                f"LOW_YIELD: {ticker} dividend yield of "
+                f"{dividend_data['dividend_yield']:.2%} is too low for DDM. "
                 f"DDM works best for mature dividend-focused companies "
                 f"such as Johnson & Johnson or Coca-Cola."
             )

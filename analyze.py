@@ -91,6 +91,7 @@ def main():
 
     ddm = DDMValuation()
     ddm_result = None
+    ddm_skip_reason = None
     try:
         ddm_result = ddm.run(
             ticker=ticker,
@@ -100,8 +101,11 @@ def main():
             risk_free_rate=rfr,
             country=info.get("country", "United States"),
         )
-    except ValueError:
-        pass
+    except ValueError as e:
+        if "NO_DIVIDENDS" in str(e):
+            ddm_skip_reason = "no_dividends"
+        elif "LOW_YIELD" in str(e):
+            ddm_skip_reason = "low_yield"
 
     detector = AnomalyDetector()
     anomaly_result = detector.run(
@@ -140,6 +144,7 @@ def main():
         comps_result=comps_result,
         anomaly_result=anomaly_result,
         ddm_result=ddm_result,
+        ddm_skip_reason=ddm_skip_reason,
         scenario=scenario,
         sensitivity_df=sensitivity_df,
     )

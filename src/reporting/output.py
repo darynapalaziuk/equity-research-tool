@@ -16,6 +16,7 @@ def print_report(
     comps_result: dict,
     anomaly_result: dict,
     ddm_result: dict = None,
+    ddm_skip_reason: str = None,
     scenario: str = "base",
     sensitivity_df=None,
 ) -> None:
@@ -68,10 +69,20 @@ def print_report(
             f"${ddm_result['ddm_price_target']:,.2f}   "
             f"(weight: {weights.get('DDM', 0):.0%})"
         )
+    elif ddm_skip_reason == "no_dividends":
+        console.print(
+            "  DDM Target:         "
+            "[dim]N/A — company does not pay dividends[/dim]"
+        )
+    elif ddm_skip_reason == "low_yield":
+        console.print(
+            "  DDM Target:         "
+            "[dim]N/A — dividend yield too low for meaningful DDM valuation[/dim]"
+        )
     else:
         console.print(
             "  DDM Target:         "
-            "[dim]N/A — company does not pay meaningful dividends[/dim]"
+            "[dim]N/A[/dim]"
         )
     if comps_result.get("comps_price_target"):
         console.print(
