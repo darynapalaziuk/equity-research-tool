@@ -20,7 +20,7 @@ def print_report(
     scenario: str = "base",
     sensitivity_df=None,
     dcf_worst: dict = None,
-    dcf_best: dict = None
+    dcf_best: dict = None,
 ) -> None:
     """
     Print a complete equity research report to the terminal.
@@ -73,8 +73,7 @@ def print_report(
         )
     elif ddm_skip_reason == "no_dividends":
         console.print(
-            "  DDM Target:         "
-            "[dim]N/A — company does not pay dividends[/dim]"
+            "  DDM Target:         " "[dim]N/A — company does not pay dividends[/dim]"
         )
     elif ddm_skip_reason == "low_yield":
         console.print(
@@ -82,10 +81,7 @@ def print_report(
             "[dim]N/A — dividend yield too low for meaningful DDM valuation[/dim]"
         )
     else:
-        console.print(
-            "  DDM Target:         "
-            "[dim]N/A[/dim]"
-        )
+        console.print("  DDM Target:         " "[dim]N/A[/dim]")
     if comps_result.get("comps_price_target"):
         console.print(
             f"  Comparables Target: "

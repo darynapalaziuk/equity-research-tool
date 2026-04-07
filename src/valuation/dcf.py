@@ -1,8 +1,10 @@
 import pandas as pd
 
-from src.utils.calculations import (calculate_cost_of_equity,
-                                    get_equity_risk_premium,
-                                    get_terminal_growth_rate)
+from src.utils.calculations import (
+    calculate_cost_of_equity,
+    get_equity_risk_premium,
+    get_terminal_growth_rate,
+)
 
 
 class DCFValuation:
@@ -68,10 +70,10 @@ class DCFValuation:
         return 0.21, "fallback: US statutory rate 21%"
 
     def calculate_debt_to_equity(
-            self,
-            balance_sheet_df: pd.DataFrame,
-            shares_outstanding: float = None,
-            current_price: float = None,
+        self,
+        balance_sheet_df: pd.DataFrame,
+        shares_outstanding: float = None,
+        current_price: float = None,
     ) -> tuple:
         """
         D/E ratio for WACC calculation.
@@ -325,14 +327,14 @@ class DCFValuation:
 
     def run_with_custom_wacc(
         self,
-        ticker: str,
-        income_df: pd.DataFrame,
+        _ticker: str,
+        _income_df: pd.DataFrame,
         cash_flow_df: pd.DataFrame,
         balance_sheet_df: pd.DataFrame,
-        beta: float,
-        risk_free_rate: float,
+        _beta: float,
+        _risk_free_rate: float,
         shares_outstanding: float,
-        country: str,
+        _country: str,
         scenario: str,
         custom_wacc: float,
         custom_tgr: float,
