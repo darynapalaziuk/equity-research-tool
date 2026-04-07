@@ -66,10 +66,12 @@ def print_report(
         f"(weight: {weights.get('DCF', 0):.0%})"
     )
     if ddm_result:
+        ddm_type_label = ddm_result.get("ddm_type", "Standard DDM")
         console.print(
             f"  DDM Target:         "
             f"${ddm_result['ddm_price_target']:,.2f}   "
-            f"(weight: {weights.get('DDM', 0):.0%})"
+            f"(weight: {weights.get('DDM', 0):.0%})   "
+            f"[dim]{ddm_type_label}[/dim]"
         )
     elif ddm_skip_reason == "no_dividends":
         console.print(

@@ -312,3 +312,33 @@ class FinancialDataFetcher:
         if info.get("longName"):
             cache.set(cache_key, result, expire=CACHE_TTL)
         return result
+
+    def get_buyback_data(self, ticker: str) -> dict:
+        """
+        Fetch share repurchase data from cash flow statement.
+        Used for Total Shareholder Yield DDM calculation.
+        """
+        cache_key = f"buyback_{ticker}"
+        if cache_key in cache:
+            return cache[cache_key]
+
+        try:
+            cashflow = self.get_cash_flow(ticker)
+            if "Repurchase Of Capital Stock" in cashflow.columns:
+                # yfinance returns as negative number — take abs
+                buybacks = abs(float(
+                    cashflow["Repurchase Of Capital Stock"].dropna().iloc[0]
+                ))
+            else:
+                buybacks = 0.0
+
+            result = {
+                "annual_buybacks": buybacks,
+                "has_buybacks": buybacks > 0,
+            }
+            if buybacks > 0:
+                cache.set(cache_key, result, expire=CACHE_TTL)
+            return result
+
+        except Exception:
+            return {"annual_buybacks": 0.0, "has_buybacks": False}

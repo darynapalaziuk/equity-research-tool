@@ -50,6 +50,7 @@ def main():
     info = f.get_company_info(ticker)
     dividend_data = f.get_dividend_data(ticker)
     dividend_history = f.get_dividend_history(ticker)
+    buyback_data = f.get_buyback_data(ticker)
 
     print("Running valuations...")
 
@@ -126,6 +127,9 @@ def main():
             beta=beta,
             risk_free_rate=rfr,
             country=info.get("country", "United States"),
+            buyback_data=buyback_data,
+            shares_outstanding=shares,
+            current_price=price,
         )
     except ValueError as e:
         if "NO_DIVIDENDS" in str(e):
